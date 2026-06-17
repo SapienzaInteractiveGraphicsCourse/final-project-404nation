@@ -63,7 +63,7 @@ export function resolveStep(state, ctx, dir) {
   if (state.segments.some((s) => equals(s, target))) return reject();
 
   // --- Legal move: build the glide/grow state. ---
-  const ate = isFruit(targetCh);
+  const ate = isFruit(targetCh) && state.remainingFruit.some((f) => equals(f, target));
   // New head enters target; every other segment takes the previous cell of the
   // one ahead. On growth the tail stays (length + 1), so we don't drop it.
   const movedSegments = ate
