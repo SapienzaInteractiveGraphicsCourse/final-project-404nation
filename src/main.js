@@ -1,7 +1,19 @@
-import level01 from "./levels/level01.json";
+import level3 from "./levels/level-3.json";
 import { loadLevel } from "./levels/loadLevel.js";
-import { InputManager } from "./ui/Inputmanager.js";
-const level = loadLevel(level01);
-console.log("Level loaded:");
-console.log(level);
-new InputManager();
+import { GameEngine } from "./engine/index.js";
+import { InputManager } from "./ui/inputmanager.js";
+
+const gameLevel = loadLevel(level3);
+const engine = new GameEngine(gameLevel);
+//验证初始化和有蛇的位置：
+console.log("Engine state:");
+console.log(engine.state);
+
+new InputManager((direction) => {
+    const result = engine.step(direction);
+//调试输出:
+    console.log("Move:", direction);
+    console.log("Accepted:", result.accepted);
+    console.log("Status:", engine.status);
+    console.log("Head:", engine.state.segments[0]);
+});
