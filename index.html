@@ -4,10 +4,48 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>final-project-404nation</title>
+    <title>2.5D Snakebird</title>
   </head>
   <body>
-    <div id="app"></div>
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="hud-row"><span class="hud-label">Level</span><span id="hud-level">—</span></div>
+      <div class="hud-row"><span class="hud-label">Fruit left</span><span id="hud-fruit">0</span></div>
+      <div class="hud-row"><span class="hud-label">Moves</span><span id="hud-moves">0</span></div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+      <div class="ctrl-group">
+        <span class="ctrl-title">View</span>
+        <button data-view="front">Front</button>
+        <button data-view="iso">Iso</button>
+        <button data-view="orbit">Orbit</button>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-title">Lights</span>
+        <button id="btn-light">Key light: ON</button>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-title">Game</span>
+        <button id="btn-undo">Undo (U)</button>
+        <button id="btn-reset">Reset (R)</button>
+      </div>
+    </div>
+
+    <div id="hint">Move: WASD / Arrows &nbsp;·&nbsp; Drag to orbit &nbsp;·&nbsp; Scroll to zoom</div>
+
+    <!-- Win / lose overlay -->
+    <div id="overlay" class="hidden">
+      <div class="overlay-card">
+        <h1 id="overlay-title">You win!</h1>
+        <p id="overlay-text">Level complete.</p>
+        <button id="overlay-btn">Play again (R)</button>
+      </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
