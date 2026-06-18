@@ -1,4 +1,4 @@
-import level3 from "./levels/level-3.json";
+import level3 from "../levels/level-3.json";
 import { loadLevel } from "./levels/loadLevel.js";
 import { GameEngine } from "./engine/index.js";
 import { InputManager } from "./ui/inputmanager.js";
