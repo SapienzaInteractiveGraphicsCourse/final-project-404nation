@@ -1,5 +1,7 @@
 # final-project-404nation
 This is a Snakebird-style puzzle game for the Interactive Graphics final project.
+## Play the Game
+Coming soon...
 ## How to Run
 Install dependencies:
 ```bash
@@ -22,6 +24,7 @@ Three custom levels are provided:
 - Level 1
 - Level 2
 - Level 3
+
 The level files are stored in the `levels/` folder.
 ## Level Format
 Each level is stored as a JSON file.
