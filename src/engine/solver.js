@@ -12,7 +12,12 @@
 import { move, equals } from '../shared/coords.js';
 import { isWall, isFruit, isSpikes, isExit } from '../shared/cells.js';
 import { freezeState, cloneCoord } from './state.js';
-import { simulateFall } from './gravity.js';
+import { simulateFall, cellKey } from './gravity.js';
+
+/** Set of cell keys for the uneaten fruit in a state — used as gravity ground. */
+function fruitSetOf(state) {
+  return new Set(state.remainingFruit.map((f) => cellKey(f.col, f.row)));
+}
 
 /** @typedef {import('./state.js').GameState} GameState */
 /** @typedef {import('../shared/coords.js').Direction} Direction */
@@ -102,8 +107,10 @@ export function resolveStep(state, ctx, dir) {
     return finishWin(phases, current);
   }
 
-  // Gravity: fall as a single phase covering all dropped cells.
-  const fall = simulateFall(current.segments, ctx);
+  // Gravity: fall as a single phase covering all dropped cells. Uneaten fruit
+  // (in current.remainingFruit) counts as ground; the just-eaten fruit is
+  // already gone from the set, so its cell is now air.
+  const fall = simulateFall(current.segments, ctx, fruitSetOf(current));
   if (fall.fallCells > 0) {
     const fallen = freezeState({ ...current, segments: fall.segments });
     phases.push({ kind: 'fall', before: current, after: fallen, meta: { fallCells: fall.fallCells } });
