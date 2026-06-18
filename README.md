@@ -1,3 +1,5 @@
+![alt text](image.png)
+
 # final-project-404nation
 This is a Snakebird-style puzzle game for the Interactive Graphics final project.
 ## Play the Game
