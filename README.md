@@ -2,7 +2,7 @@
 # final-project-404nation
 404 Snake is a Snakebird-style puzzle game for the Interactive Graphics final project.
 ## Play the Game
-Coming soon...
+[Play 404 Snake](https://sapienzainteractivegraphicscourse.github.io/final-project-404nation/)
 ## How to Run Locally
 Install dependencies:
 ```bash
@@ -39,12 +39,15 @@ The game opens on a main menu with:
 - Level Select
 During play, the in-game control panel is hidden by default and can be shown or hidden with `Esc`. Press `M` or use the control panel button to return to the main menu.
 ## Levels
-Five levels are provided in this order:
+Eight levels are provided in this order:
 - level-guide
 - level-1
 - level-2
 - level-3
 - level-4
+- level-5
+- level-6
+- level-7
 
 The level files are stored in the `levels/` folder.
 ## Level Format

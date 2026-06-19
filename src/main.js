@@ -13,7 +13,10 @@ import level1 from "../levels/level-1.json";
 import level2 from "../levels/level-2.json";
 import level3 from "../levels/level-3.json";
 import level4 from "../levels/level-4.json";
-const LEVELS = [levelGuide, level1, level2, level3, level4].map(loadLevel);
+import level5 from "../levels/level-5.json";
+import level6 from "../levels/level-6.json";
+import level7 from "../levels/level-7.json";
+const LEVELS = [levelGuide, level1, level2, level3, level4, level5, level6, level7].map(loadLevel);
 const canvas = document.querySelector("#game-canvas");
 const renderer = new Renderer(canvas);
 let currentLevelIndex = 0;
@@ -23,6 +26,7 @@ let snakeView = new SnakeView(engine.state, { materials: renderer.snakeMaterials
 let busy = false;
 let currentView = "iso";
 let gameStarted = false;
+let hintTimer = null;
 renderer.boardGroup.add(snakeView.object3D);
 renderer.start();
 //HUD
@@ -34,6 +38,7 @@ const els = {
   overlayTitle: document.querySelector("#overlay-title"),
   overlayText: document.querySelector("#overlay-text"),
   overlayBtn: document.querySelector("#overlay-btn"),
+  hint: document.querySelector("#hint"),
   controls: document.querySelector("#controls"),
   lightBtn: document.querySelector("#btn-light"),
   prevBtn: document.querySelector("#btn-prev"),
@@ -72,6 +77,19 @@ function showOverlay(title, text, buttonText) {
 function hideOverlay() {
   els.overlay.classList.add("hidden");
 }
+function hideHint() {
+  if (hintTimer) {
+    clearTimeout(hintTimer);
+    hintTimer = null;
+  }
+  els.hint.classList.add("hidden");
+}
+function showGuideHint() {
+  hideHint();
+  if (level.id !== "level 1" && level.id !== "level-guide") return;
+  els.hint.classList.remove("hidden");
+  hintTimer = window.setTimeout(hideHint, 8000);
+}
 function loadLevelAt(index) {
   if (busy || index < 0 || index >= LEVELS.length) return;
   currentLevelIndex = index;
@@ -82,6 +100,7 @@ function loadLevelAt(index) {
   renderer.updateFromState(engine.state);
   selectView(currentView);
   updateHud(engine.state);
+  if (gameStarted) showGuideHint();
 }
 function startGame(index = 0) {
   gameStarted = true;
@@ -93,6 +112,7 @@ function returnToMainMenu() {
   gameStarted = false;
   busy = false;
   hideOverlay();
+  hideHint();
   els.controls.classList.add("hidden");
   els.levelSelect.classList.add("hidden");
   els.mainMenu.classList.remove("hidden");

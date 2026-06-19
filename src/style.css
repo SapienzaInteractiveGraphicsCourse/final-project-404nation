@@ -124,13 +124,29 @@ button:disabled {
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
-  color: var(--muted);
-  font-size: 13px;
+  color: var(--text);
+  font-size: 14px;
   background: var(--panel);
   border: 1px solid var(--panel-border);
-  border-radius: 999px;
-  padding: 8px 18px;
+  border-radius: 28px;
+  padding: 12px 22px;
   backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  max-width: min(760px, calc(100vw - 32px));
+  text-align: center;
+  flex-wrap: wrap;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+}
+
+#hint strong {
+  color: var(--accent);
+}
+
+#hint.hidden {
+  display: none;
 }
 
 #main-menu {
