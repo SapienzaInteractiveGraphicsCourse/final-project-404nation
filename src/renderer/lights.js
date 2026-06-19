@@ -18,15 +18,18 @@ import * as THREE from "../../lib/three.module.js";
 
 // --- Tunables (adjust feel here) ----------------------------------------
 export const KEY_INTENSITY = 2.6;
-// Key-light offset as fractions of board width W / height H / span=max(W,H):
-export const KEY_OFFSET = { x: -0.4, y: 0.9, z: 0.7 };
+// Key-light offset as fractions of board width W / height H / span=max(W,H).
+// A more grazing (lower-Y) + more lateral (bigger-X) angle throws longer,
+// side-cast shadows so they read as "cast" rather than glued under the piece.
+export const KEY_OFFSET = { x: -0.55, y: 0.7, z: 0.6 };
 export const FILL_INTENSITY = 0.5;       // hemisphere fill
 export const FILL_BOOST_WHEN_KEY_OFF = 0.4;
 export const ACCENT_INTENSITY = 22;      // warm point light (decay 2 → needs punch)
 export const SHADOW_MAP_SIZE = 2048;     // drop to 1024 if perf suffers
 export const SHADOW_BIAS = -0.0005;      // kill acne (tune by eye)
 export const SHADOW_NORMAL_BIAS = 0.02;
-export const SHADOW_RADIUS = 6;          // soft-shadow blur radius
+export const SHADOW_RADIUS = 12;         // soft-shadow blur radius (wide penumbra)
+export const SHADOW_BLUR_SAMPLES = 25;   // VSM filter samples (smoother edge)
 export const SHADOW_MARGIN = 1.5;        // frustum padding around the board
 
 /**
@@ -41,7 +44,7 @@ export function addLights(scene, size = { cols: 8, rows: 6 }) {
   keyLight.castShadow = true;
   keyLight.shadow.mapSize.set(SHADOW_MAP_SIZE, SHADOW_MAP_SIZE);
   keyLight.shadow.radius = SHADOW_RADIUS;
-  keyLight.shadow.blurSamples = 16;
+  keyLight.shadow.blurSamples = SHADOW_BLUR_SAMPLES;
   keyLight.shadow.bias = SHADOW_BIAS;
   keyLight.shadow.normalBias = SHADOW_NORMAL_BIAS;
   scene.add(keyLight);

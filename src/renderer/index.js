@@ -72,8 +72,12 @@ export class Renderer {
     this.exitMesh = null;
 
     // Soft-shadow catcher (restores visible shadows without a backboard wall).
+    // Depth = how far behind the play plane it sits; a larger gap lets the
+    // off-axis light throw an offset, softer shadow instead of a glued-on patch.
     this.shadowCatcher = true;
-    this.shadowCatcherOpacity = 0.26;
+    this.shadowCatcherOpacity = 0.22;
+    this.shadowCatcherDepth = 1.5;
+    this.shadowCatcherColor = 0x101d33; // cool tint blends with the sky
 
     // Customizable background (replaces the old backboard wall).
     this._bgConfig = { ...DEFAULT_BACKGROUND };
@@ -199,10 +203,10 @@ export class Renderer {
     // there's no backboard wall. Set shadowCatcher=false to disable.
     if (this.shadowCatcher) {
       const catcher = new THREE.Mesh(
-        new THREE.PlaneGeometry(cols * CELL + 2, rows * CELL + 2),
-        new THREE.ShadowMaterial({ opacity: this.shadowCatcherOpacity })
+        new THREE.PlaneGeometry(cols * CELL + 4, rows * CELL + 4),
+        new THREE.ShadowMaterial({ color: this.shadowCatcherColor, opacity: this.shadowCatcherOpacity })
       );
-      catcher.position.set((cols - 1) / 2 * CELL, -(rows - 1) / 2 * CELL, -WALL_DEPTH / 2 - 0.1);
+      catcher.position.set((cols - 1) / 2 * CELL, -(rows - 1) / 2 * CELL, -this.shadowCatcherDepth);
       catcher.receiveShadow = true;
       this.envGroup.add(catcher);
     }
