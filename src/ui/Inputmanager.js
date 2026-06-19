@@ -1,6 +1,7 @@
 export class InputManager {
-    constructor(onMove) {
+    constructor(onMove, onRestart) {
         this.onMove = onMove;
+        this.onRestart = onRestart;
 
         window.addEventListener("keydown", (event) => {
             let direction = null;
@@ -18,6 +19,11 @@ export class InputManager {
                 case "d":
                     direction = "right";
                     break;
+                case "r":
+                    if (this.onRestart) {
+                        this.onRestart();
+                    }
+                    return;
             }
 
             if (direction && this.onMove) {
