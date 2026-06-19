@@ -118,6 +118,9 @@ export function resolveStep(state, ctx, dir) {
     if (fall.fellOut) {
       return finishDeath(phases, current, 'void');
     }
+    if (fall.hitSpikes) {
+      return finishDeath(phases, current, 'spikes');
+    }
   }
 
   // Win by landing on the exit after a fall (with all fruit eaten).

@@ -9,7 +9,7 @@
 // it then falls. Fruit never blocks movement — the head still enters its cell
 // to eat it; only gravity treats uneaten fruit as ground.
 
-import { isSolid, isFruit } from '../shared/cells.js';
+import { isSolid, isFruit, isSpikes } from '../shared/cells.js';
 
 /** @typedef {import('../shared/coords.js').Coord} Coord */
 /** @typedef {{ grid: string[], rows: number, cols: number }} Ctx */
@@ -41,14 +41,19 @@ export function isSupported(segments, ctx, fruitSet) {
   return false;
 }
 
+/** Is any segment currently occupying a spike cell? Spikes kill on contact. */
+function anyOnSpikes(segments, ctx) {
+  return segments.some((s) => s.row < ctx.rows && isSpikes(ctx.grid[s.row][s.col]));
+}
+
 /**
- * Drop the snake under gravity until it rests or falls out the bottom.
- * Pure: never mutates the input segments. `fruitSet` is constant during a fall
- * (no eating happens mid-fall).
+ * Drop the snake under gravity until it rests, falls out the bottom, or any
+ * segment makes contact with spikes mid-fall. Pure: never mutates the input
+ * segments. `fruitSet` is constant during a fall (no eating happens mid-fall).
  * @param {Coord[]} segments
  * @param {Ctx} ctx
  * @param {Set<string>} fruitSet
- * @returns {{ segments: Coord[], fallCells: number, fellOut: boolean }}
+ * @returns {{ segments: Coord[], fallCells: number, fellOut: boolean, hitSpikes: boolean }}
  */
 export function simulateFall(segments, ctx, fruitSet) {
   let current = segments.map((s) => ({ col: s.col, row: s.row }));
@@ -59,10 +64,15 @@ export function simulateFall(segments, ctx, fruitSet) {
     fallCells++;
     // Any segment past the bottom edge means the snake fell into the void.
     if (next.some((s) => s.row >= ctx.rows)) {
-      return { segments: next, fallCells, fellOut: true };
+      return { segments: next, fallCells, fellOut: true, hitSpikes: false };
     }
     current = next;
+    // Spikes are not solid, so the snake falls *into* them; check contact for
+    // every segment at each cell of the descent, not just the landing cell.
+    if (anyOnSpikes(current, ctx)) {
+      return { segments: current, fallCells, fellOut: false, hitSpikes: true };
+    }
   }
 
-  return { segments: current, fallCells, fellOut: false };
+  return { segments: current, fallCells, fellOut: false, hitSpikes: false };
 }
