@@ -29,6 +29,7 @@ let engine = new GameEngine(level);
 let snakeView = new SnakeView(engine.state, { materials: renderer.snakeMaterials });
 let busy = false;
 let currentView = "iso";
+let gameStarted = false;
 
 renderer.boardGroup.add(snakeView.object3D);
 renderer.start();
@@ -42,9 +43,14 @@ const els = {
   overlayTitle: document.querySelector("#overlay-title"),
   overlayText: document.querySelector("#overlay-text"),
   overlayBtn: document.querySelector("#overlay-btn"),
+  controls: document.querySelector("#controls"),
   lightBtn: document.querySelector("#btn-light"),
   prevBtn: document.querySelector("#btn-prev"),
-  nextBtn: document.querySelector("#btn-next")
+  nextBtn: document.querySelector("#btn-next"),
+  mainMenu: document.querySelector("#main-menu"),
+  startBtn: document.querySelector("#btn-start"),
+  levelSelectBtn: document.querySelector("#btn-level-select"),
+  levelSelect: document.querySelector("#level-select")
 };
 
 function updateHud(state) {
@@ -94,6 +100,13 @@ function loadLevelAt(index) {
   updateHud(engine.state);
 }
 
+function startGame(index = 0) {
+  gameStarted = true;
+  els.mainMenu.classList.add("hidden");
+  els.controls.classList.add("hidden");
+  loadLevelAt(index);
+}
+
 function loadNextLevel() {
   if (currentLevelIndex < LEVELS.length - 1) {
     loadLevelAt(currentLevelIndex + 1);
@@ -108,7 +121,7 @@ function loadPreviousLevel() {
 
 // --- movement ----------------------------------------------------------
 async function onMove(direction) {
-  if (busy || engine.status !== "playing") return;
+  if (!gameStarted || busy || engine.status !== "playing") return;
 
   const result = engine.step(direction);
   if (!result.accepted) return;
@@ -125,7 +138,7 @@ async function onMove(direction) {
 }
 
 function doUndo() {
-  if (busy) return;
+  if (!gameStarted || busy) return;
   const state = engine.undo();
   if (state) {
     snakeView.setStateInstant(state);
@@ -135,11 +148,16 @@ function doUndo() {
 }
 
 function doReset() {
-  if (busy) return;
+  if (!gameStarted || busy) return;
   const state = engine.reset();
   snakeView.setStateInstant(state);
   renderer.updateFromState(state);
   updateHud(state);
+}
+
+function toggleControls() {
+  if (!gameStarted) return;
+  els.controls.classList.toggle("hidden");
 }
 
 // --- input -------------------------------------------------------------
@@ -152,7 +170,10 @@ const KEY_TO_DIR = {
 
 window.addEventListener("keydown", (e) => {
   const key = e.key.toLowerCase();
-  if (key in KEY_TO_DIR) {
+  if (key === "escape") {
+    e.preventDefault();
+    toggleControls();
+  } else if (key in KEY_TO_DIR) {
     e.preventDefault();
     onMove(KEY_TO_DIR[key]);
   } else if (key === "u") {
@@ -160,9 +181,9 @@ window.addEventListener("keydown", (e) => {
   } else if (key === "r") {
     doReset();
   } else if (key === "n") {
-    loadNextLevel();
+    if (gameStarted) loadNextLevel();
   } else if (key === "p") {
-    loadPreviousLevel();
+    if (gameStarted) loadPreviousLevel();
   } else if (key === "1") {
     selectView("front");
   } else if (key === "2") {
@@ -198,6 +219,10 @@ function toggleLight() {
 els.lightBtn.addEventListener("click", toggleLight);
 els.prevBtn.addEventListener("click", loadPreviousLevel);
 els.nextBtn.addEventListener("click", loadNextLevel);
+els.startBtn.addEventListener("click", () => startGame(0));
+els.levelSelectBtn.addEventListener("click", () => {
+  els.levelSelect.classList.toggle("hidden");
+});
 document.querySelector("#btn-undo").addEventListener("click", doUndo);
 document.querySelector("#btn-reset").addEventListener("click", doReset);
 els.overlayBtn.addEventListener("click", () => {
@@ -210,3 +235,11 @@ els.overlayBtn.addEventListener("click", () => {
 
 // --- init --------------------------------------------------------------
 loadLevelAt(0);
+
+LEVELS.forEach((item, index) => {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = `${index + 1}. ${item.name ?? item.id}`;
+  button.addEventListener("click", () => startGame(index));
+  els.levelSelect.append(button);
+});

@@ -9,6 +9,19 @@
   <body>
     <canvas id="game-canvas"></canvas>
 
+    <!-- Main menu -->
+    <div id="main-menu">
+      <div class="menu-panel">
+        <h1>404 Snake</h1>
+        <p>Snakebird-style puzzle levels</p>
+        <div class="menu-actions">
+          <button id="btn-start">Start</button>
+          <button id="btn-level-select">Level Select</button>
+        </div>
+        <div id="level-select" class="level-select hidden"></div>
+      </div>
+    </div>
+
     <!-- HUD -->
     <div id="hud">
       <div class="hud-row"><span class="hud-label">Level</span><span id="hud-level">-</span></div>
@@ -17,7 +30,7 @@
     </div>
 
     <!-- Controls -->
-    <div id="controls">
+    <div id="controls" class="hidden">
       <div class="ctrl-group">
         <span class="ctrl-title">View</span>
         <button data-view="front">Front</button>
@@ -37,7 +50,7 @@
       </div>
     </div>
 
-    <div id="hint">Move: WASD / Arrows &nbsp;|&nbsp; Levels: P / N &nbsp;|&nbsp; Drag to orbit &nbsp;|&nbsp; Scroll to zoom</div>
+    <div id="hint">Move: WASD / Arrows &nbsp;|&nbsp; Menu: Esc &nbsp;|&nbsp; Drag to orbit &nbsp;|&nbsp; Scroll to zoom</div>
 
     <!-- Win / lose overlay -->
     <div id="overlay" class="hidden">
