@@ -1,32 +1,29 @@
-export class InputManager {
-    constructor(onMove, onRestart) {
-        this.onMove = onMove;
-        this.onRestart = onRestart;
-
-        window.addEventListener("keydown", (event) => {
-            let direction = null;
-
-            switch (event.key.toLowerCase()) {
+export class InputManager{
+    constructor(onMove, onRestart){
+        this.onMove=onMove;
+        this.onRestart=onRestart;
+        window.addEventListener("keydown",(event)=>{
+            let direction=null;
+            switch (event.key.toLowerCase()){
                 case "w":
-                    direction = "up";
+                    direction="up";
                     break;
                 case "a":
-                    direction = "left";
+                    direction="left";
                     break;
                 case "s":
-                    direction = "down";
+                    direction="down";
                     break;
                 case "d":
-                    direction = "right";
+                    direction="right";
                     break;
                 case "r":
-                    if (this.onRestart) {
+                    if (this.onRestart){
                         this.onRestart();
-                    }
-                    return;
+                    }return;
             }
 
-            if (direction && this.onMove) {
+            if (direction && this.onMove){
                 this.onMove(direction);
             }
         });
