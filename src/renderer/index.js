@@ -1,5 +1,5 @@
 // Renderer (Part C). Owns the Three.js scene: lights, materials, shadows,
-// camera, and the board's static environment meshes (floor / walls / fruit /
+// camera, background, and the board's static environment meshes (walls / fruit /
 // exit / spikes). Public surface matches the Tech Spec §7.2:
 //
 //   constructor(canvas)
@@ -23,7 +23,8 @@ import { CELL_TYPES } from "../shared/cells.js";
 
 import { addLights } from "./lights.js";
 import { OrbitCamera } from "./camera.js";
-import { buildEnvironmentMaterials, buildSnakeMaterials } from "./materials.js";
+import { MaterialLibrary, buildSnakeMaterials } from "./materials.js";
+import { DEFAULT_BACKGROUND, loadTexture } from "./textures.js";
 
 const WALL_DEPTH = 1.0;
 
@@ -41,8 +42,6 @@ export class Renderer {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x1a1d2b);
-    this.scene.fog = new THREE.Fog(0x1a1d2b, 18, 42);
 
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
 
@@ -62,11 +61,23 @@ export class Renderer {
     this.lights = addLights(this.scene, { cols: 8, rows: 6 });
     this.orbit = new OrbitCamera(this.camera, canvas);
 
+    // Named, texture-aware materials. Blocks/cells pick from here by name and
+    // custom materials can be registered via materialLibrary.define(...).
+    this.materialLibrary = new MaterialLibrary();
+    this.snakeMaterials = buildSnakeMaterials(this.materialLibrary);
+    this.exitMaterial = this.materialLibrary.get("exit");
+
     /** @type {Map<string, THREE.Object3D>} fruit meshes by "col,row" */
     this.fruitMeshes = new Map();
     this.exitMesh = null;
-    this.envMaterials = null;
-    this.snakeMaterials = buildSnakeMaterials();
+
+    // Soft-shadow catcher (restores visible shadows without a backboard wall).
+    this.shadowCatcher = true;
+    this.shadowCatcherOpacity = 0.26;
+
+    // Customizable background (replaces the old backboard wall).
+    this._bgConfig = { ...DEFAULT_BACKGROUND };
+    this.setBackground();
 
     this._timer = new THREE.Timer();
     this._running = false;
@@ -77,30 +88,65 @@ export class Renderer {
   }
 
   /**
-   * Build the static environment for a level: floor, walls, fruit, exit, spikes.
-   * @param {{grid:string[]}} level
+   * Configure the scene background (color fallback + optional image file).
+   * @param {{color?:number, texture?:string|null, equirect?:boolean}} [def]
+   *   Pass `texture` as a file path to use an image; `equirect:true` treats it
+   *   as a 360° environment. Omit/null `texture` to use the solid color.
    */
-  buildLevel(level) {
+  setBackground(def = {}) {
+    const cfg = { ...this._bgConfig, ...def };
+    this._bgConfig = cfg;
+
+    // immediate solid-color fallback + matching fog
+    this.scene.background = new THREE.Color(cfg.color);
+    this.scene.fog = new THREE.Fog(cfg.color, 18, 55);
+
+    if (!cfg.texture) return;
+    // Optional background image — applied only if the file actually loads, so a
+    // missing placeholder leaves the solid color in place.
+    loadTexture(cfg.texture, {
+      onLoad: (tex) => {
+        if (cfg.equirect) {
+          tex.mapping = THREE.EquirectangularReflectionMapping;
+          this.scene.environment = tex; // also light reflections
+        } else {
+          tex.colorSpace = THREE.SRGBColorSpace;
+        }
+        this.scene.background = tex;
+        this.scene.fog = null; // image background reads better without fog
+      },
+      onError: () => { /* keep solid color */ }
+    });
+  }
+
+  /**
+   * Build the static environment for a level.
+   * @param {{grid:string[], cellMaterials?:Object<string,string>}} level
+   * @param {{wallMaterial?:string, cellMaterials?:Object<string,string>}} [options]
+   *   Blocks can use different materials: `wallMaterial` sets the default wall
+   *   material name; `cellMaterials` maps "col,row" → a material name in the
+   *   library (also read from level.cellMaterials).
+   */
+  buildLevel(level, options = {}) {
     const grid = level.grid;
     const rows = grid.length;
     const cols = grid[0].length;
 
     this._clearEnv();
-    this.envMaterials = buildEnvironmentMaterials({ cols, rows });
+
+    // Per-block material resolution (Requirement: blocks can load different
+    // materials). Falls back to the default wall material if a name is unknown.
+    const wallMaterialName = options.wallMaterial || "wall";
+    const cellMaterials = { ...(level.cellMaterials || {}), ...(options.cellMaterials || {}) };
+    const blockMaterial = (col, row) => {
+      const name = cellMaterials[`${col},${row}`] || wallMaterialName;
+      return this.materialLibrary.get(name) || this.materialLibrary.get("wall");
+    };
 
     // Centre the board on the origin (offset applied once, to the board group).
     this.boardGroup.position.set(-(cols - 1) / 2 * CELL, (rows - 1) / 2 * CELL, 0);
 
-    // --- floor backboard (receives shadows) ---
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(cols * CELL + 1.5, rows * CELL + 1.5),
-      this.envMaterials.floor
-    );
-    floor.position.set((cols - 1) / 2 * CELL, -(rows - 1) / 2 * CELL, -WALL_DEPTH / 2 - 0.05);
-    floor.receiveShadow = true;
-    this.envGroup.add(floor);
-
-    // --- cell contents ---
+    // --- cell contents (no backboard wall — see setBackground) ---
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const ch = grid[row][col];
@@ -109,7 +155,7 @@ export class Renderer {
         if (ch === CELL_TYPES.WALL) {
           const wall = new THREE.Mesh(
             new THREE.BoxGeometry(CELL, CELL, WALL_DEPTH),
-            this.envMaterials.wall
+            blockMaterial(col, row)
           );
           wall.position.set(x, y, 0);
           wall.castShadow = true;
@@ -118,7 +164,7 @@ export class Renderer {
         } else if (ch === CELL_TYPES.FRUIT) {
           const fruit = new THREE.Mesh(
             new THREE.SphereGeometry(0.3 * CELL, 24, 18),
-            this.envMaterials.fruit
+            this.materialLibrary.get("fruit")
           );
           fruit.position.set(x, y, 0.1);
           fruit.castShadow = true;
@@ -132,17 +178,30 @@ export class Renderer {
           this.envGroup.add(exit);
           this.exitMesh = exit;
         } else if (ch === CELL_TYPES.SPIKES) {
+          // cone points up (+Y) so it reads as a classic spike from any view
           const spike = new THREE.Mesh(
-            new THREE.ConeGeometry(0.32 * CELL, 0.7 * CELL, 12),
-            this.envMaterials.spikes
+            new THREE.ConeGeometry(0.34 * CELL, 0.8 * CELL, 12),
+            this.materialLibrary.get("spikes")
           );
-          // cone points up (+Y) out of the play plane toward the snake
           spike.position.set(x, y, 0.1);
-          spike.rotation.x = Math.PI / 2;
           spike.castShadow = true;
+          spike.receiveShadow = true;
           this.envGroup.add(spike);
         }
       }
+    }
+
+    // Invisible shadow catcher behind the board: a transparent ShadowMaterial
+    // plane so the soft shadows are still visible against the background now that
+    // there's no backboard wall. Set shadowCatcher=false to disable.
+    if (this.shadowCatcher) {
+      const catcher = new THREE.Mesh(
+        new THREE.PlaneGeometry(cols * CELL + 2, rows * CELL + 2),
+        new THREE.ShadowMaterial({ opacity: this.shadowCatcherOpacity })
+      );
+      catcher.position.set((cols - 1) / 2 * CELL, -(rows - 1) / 2 * CELL, -WALL_DEPTH / 2 - 0.1);
+      catcher.receiveShadow = true;
+      this.envGroup.add(catcher);
     }
 
     // frame the camera to the new board
@@ -157,7 +216,7 @@ export class Renderer {
     const group = new THREE.Group();
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(0.34 * CELL, 0.07 * CELL, 16, 32),
-      this.envMaterials.exit
+      this.exitMaterial
     );
     group.add(ring);
     const disc = new THREE.Mesh(
@@ -239,7 +298,7 @@ export class Renderer {
       const open = this.exitMesh.userData.open;
       const s = open ? 1 + Math.sin(t * 4) * 0.08 : 1;
       this.exitMesh.scale.setScalar(s);
-      this.envMaterials.exit.emissiveIntensity = open ? 1.1 + Math.sin(t * 4) * 0.4 : 0.5;
+      this.exitMaterial.emissiveIntensity = open ? 1.1 + Math.sin(t * 4) * 0.4 : 0.5;
     }
   }
 

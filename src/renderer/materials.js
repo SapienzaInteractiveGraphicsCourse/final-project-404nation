@@ -1,109 +1,127 @@
 // Materials (Part C — renderer).
 //
-// Every surface here is a MeshStandardMaterial (physically based) wired with
-// THREE coordinated map kinds at once — colour `map`, `normalMap`, and
-// `roughnessMap`.
+// Every surface is a MeshStandardMaterial (physically based) that can load a
+// custom PBR texture set — colour `map`, `normalMap`, `roughnessMap` — from
+// files (see textures.js). When a texture file is absent the material falls back
+// to its base colour, so the game always renders.
+//
+// Materials are organised in a MaterialLibrary keyed by name, so different
+// blocks/cells can be assigned different materials, and new custom materials can
+// be registered at runtime.
 
 import * as THREE from "../../lib/three.module.js";
-import {
-  makeFloorTextures,
-  makeWallTextures,
-  makeSnakeTextures,
-  makeFruitTextures
-} from "./textures.js";
+import { textureSet, applyTextureSet } from "./textures.js";
 
 /**
- * Build the environment material set (floor / walls / fruit / exit / spikes).
- * @param {{cols:number, rows:number}} size board size, used to tile the floor.
+ * Built-in material definitions. Each entry = base PBR params + an optional
+ * texture set (file paths). Drop matching PNGs into public/assets/textures to
+ * skin any surface; until then the base colour is used. Add entries here (or via
+ * MaterialLibrary.define) to give blocks different looks.
  */
-export function buildEnvironmentMaterials({ cols, rows }) {
-  const floorTex = makeFloorTextures();
-  // tile the floor so each board cell shows roughly one stone tile cluster
-  for (const t of [floorTex.map, floorTex.normalMap, floorTex.roughnessMap]) {
-    t.repeat.set(cols / 2, rows / 2);
-  }
+export const MATERIAL_DEFS = {
+  // --- blocks (walls / obstacles): several looks so cells can differ ---
+  wall: { color: 0x8a6f52, roughness: 1.0, metalness: 0.05, textures: textureSet("wall"), normalScale: [1.2, 1.2] },
+  wallAlt: { color: 0x6f5a44, roughness: 1.0, metalness: 0.05, textures: textureSet("wall_alt"), normalScale: [1.2, 1.2] },
+  stone: { color: 0x7d8590, roughness: 0.95, metalness: 0.0, textures: textureSet("stone") },
+  // NOTE: high metalness with no environment map renders black. Keep metalness
+  // modest so metals still shade under direct light alone.
+  metal: { color: 0x9aa3ad, roughness: 0.4, metalness: 0.4, textures: textureSet("metal") },
 
-  const wallTex = makeWallTextures();
-  const fruitTex = makeFruitTextures();
+  // --- other environment ---
+  spikes: { color: 0xb9c0c9, roughness: 0.45, metalness: 0.15, textures: textureSet("spikes") },
+  fruit: {
+    color: 0xc0392b, roughness: 0.7, metalness: 0.0, textures: textureSet("fruit"),
+    emissive: 0x4a0d06, emissiveIntensity: 0.25
+  },
+  exit: {
+    color: 0x37d2c4, roughness: 0.25, metalness: 0.1, textures: textureSet("exit"),
+    emissive: 0x0fae9e, emissiveIntensity: 0.6, transparent: true, opacity: 0.85
+  },
 
-  const floor = new THREE.MeshStandardMaterial({
-    map: floorTex.map,
-    normalMap: floorTex.normalMap,
-    roughnessMap: floorTex.roughnessMap,
-    normalScale: new THREE.Vector2(1, 1),
-    roughness: 1.0,
-    metalness: 0.0
-  });
+  // --- snake (head / body / alt / tail; varied tint, each own texture slot) ---
+  snakeHead: { color: 0x66d16f, roughness: 0.5, metalness: 0.0, textures: textureSet("snake_head"), normalScale: [1.1, 1.1] },
+  snakeBody: { color: 0x54bf63, roughness: 0.58, metalness: 0.0, textures: textureSet("snake_body"), normalScale: [1.1, 1.1] },
+  snakeBodyAlt: { color: 0x49ad58, roughness: 0.62, metalness: 0.0, textures: textureSet("snake_body_alt"), normalScale: [1.1, 1.1] },
+  snakeTail: { color: 0x3f9d4b, roughness: 0.66, metalness: 0.0, textures: textureSet("snake_tail"), normalScale: [1.1, 1.1] }
+};
 
-  const wall = new THREE.MeshStandardMaterial({
-    map: wallTex.map,
-    normalMap: wallTex.normalMap,
-    roughnessMap: wallTex.roughnessMap,
-    normalScale: new THREE.Vector2(1.2, 1.2),
-    roughness: 1.0,
-    metalness: 0.05
-  });
+/**
+ * Create one MeshStandardMaterial from a definition, loading any custom textures.
+ * @param {object} [def] base params + textures ({map,normalMap,roughnessMap}) or
+ *                        individual `map`/`normalMap`/`roughnessMap` file paths.
+ * @returns {THREE.MeshStandardMaterial}
+ */
+export function createMaterial(def = {}) {
+  const {
+    color = 0xffffff, roughness = 0.8, metalness = 0.0,
+    emissive, emissiveIntensity, transparent, opacity, side,
+    map, normalMap, roughnessMap, textures, repeat = [1, 1], normalScale
+  } = def;
 
-  const fruit = new THREE.MeshStandardMaterial({
-    map: fruitTex.map,
-    normalMap: fruitTex.normalMap,
-    roughnessMap: fruitTex.roughnessMap,
-    roughness: 0.7,
-    metalness: 0.0,
-    emissive: 0x4a0d06,
-    emissiveIntensity: 0.25
-  });
+  const mat = new THREE.MeshStandardMaterial({ color, roughness, metalness });
+  if (emissive !== undefined) mat.emissive = new THREE.Color(emissive);
+  if (emissiveIntensity !== undefined) mat.emissiveIntensity = emissiveIntensity;
+  if (transparent !== undefined) mat.transparent = transparent;
+  if (opacity !== undefined) mat.opacity = opacity;
+  if (side !== undefined) mat.side = side;
+  if (normalScale) mat.normalScale = new THREE.Vector2(normalScale[0], normalScale[1]);
 
-  const exit = new THREE.MeshStandardMaterial({
-    color: 0x37d2c4,
-    roughness: 0.25,
-    metalness: 0.1,
-    emissive: 0x0fae9e,
-    emissiveIntensity: 0.6,
-    transparent: true,
-    opacity: 0.85
-  });
-
-  const spikes = new THREE.MeshStandardMaterial({
-    color: 0x9aa3ad,
-    roughness: 0.35,
-    metalness: 0.6
-  });
-
-  return { floor, wall, fruit, exit, spikes };
+  // Custom textures: an explicit map-set, or individual file paths.
+  const set = textures || { map, normalMap, roughnessMap };
+  applyTextureSet(mat, set, { repeat });
+  return mat;
 }
 
 /**
- * Build the snake material set passed to SnakeView via `opts.materials`.
- * The keys here mirror SnakeMaterials.createSnakeMaterials so the renderer's
- * textured PBR materials cleanly override the module's plain defaults.
- *
- * Head / body / bodyAlt / tail all share the scale texture maps (so the whole
- * articulated body is textured) but vary in tint + roughness for visual depth.
+ * A registry of named materials. Blocks request materials by name; new custom
+ * materials can be registered or re-skinned at runtime.
  */
-export function buildSnakeMaterials() {
-  const headTex = makeSnakeTextures({ r: 102, g: 209, b: 111 });
-  const bodyTex = makeSnakeTextures({ r: 84, g: 191, b: 99 });
-  const altTex = makeSnakeTextures({ r: 73, g: 173, b: 88 });
-  const tailTex = makeSnakeTextures({ r: 63, g: 157, b: 75 });
+export class MaterialLibrary {
+  /** @param {Object<string, object>} [overrides] extra/override definitions */
+  constructor(overrides = {}) {
+    /** @type {Map<string, THREE.MeshStandardMaterial>} */
+    this.materials = new Map();
+    const defs = { ...MATERIAL_DEFS, ...overrides };
+    for (const [name, def] of Object.entries(defs)) {
+      this.materials.set(name, createMaterial(def));
+    }
+  }
 
-  const skin = (tex, { roughness = 0.6, color = 0xffffff } = {}) =>
-    new THREE.MeshStandardMaterial({
-      color,
-      map: tex.map,
-      normalMap: tex.normalMap,
-      roughnessMap: tex.roughnessMap,
-      normalScale: new THREE.Vector2(1.1, 1.1),
-      roughness,
-      metalness: 0.0
-    });
+  get(name) {
+    return this.materials.get(name);
+  }
 
+  has(name) {
+    return this.materials.has(name);
+  }
+
+  /** Register/replace a named material from a definition (custom textures ok). */
+  define(name, def) {
+    const mat = createMaterial(def);
+    this.materials.set(name, mat);
+    return mat;
+  }
+
+  /** Attach a custom texture set to an existing named material at runtime. */
+  setTextures(name, set, opts) {
+    const mat = this.materials.get(name);
+    if (mat) applyTextureSet(mat, set, opts);
+    return mat;
+  }
+}
+
+/**
+ * Snake material set passed to SnakeView via opts.materials. Pulls the snake
+ * skins from the library (so they share the custom-texture pipeline) and adds
+ * the small solid-colour face/accent materials.
+ * @param {MaterialLibrary} [lib]
+ */
+export function buildSnakeMaterials(lib = new MaterialLibrary()) {
   return {
-    head: skin(headTex, { roughness: 0.5 }),
-    body: skin(bodyTex, { roughness: 0.58 }),
-    bodyAlt: skin(altTex, { roughness: 0.62 }),
-    tail: skin(tailTex, { roughness: 0.66 }),
-    // face / accent materials stay as crisp solid colours
+    head: lib.get("snakeHead"),
+    body: lib.get("snakeBody"),
+    bodyAlt: lib.get("snakeBodyAlt"),
+    tail: lib.get("snakeTail"),
     eyeWhite: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }),
     pupil: new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 }),
     beak: new THREE.MeshStandardMaterial({ color: 0xffc857, roughness: 0.45, metalness: 0.1 }),

@@ -12,7 +12,7 @@ import { GameEngine } from "./engine/index.js";
 import { Renderer } from "./renderer/index.js";
 import { SnakeView } from "./snake-view/index.js";
 import { loadLevel } from "./levels/loadlevel.js";
-import level01 from "./levels/level01.json";
+import level01 from "../levels/level-3.json";
 
 const level = loadLevel(level01);
 
