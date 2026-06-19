@@ -146,6 +146,9 @@ export class Renderer {
     // Centre the board on the origin (offset applied once, to the board group).
     this.boardGroup.position.set(-(cols - 1) / 2 * CELL, (rows - 1) / 2 * CELL, 0);
 
+    // Re-fit the key light + shadow frustum to this level's actual bounds.
+    this.lights.update({ cols, rows });
+
     // --- cell contents (no backboard wall — see setBackground) ---
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
@@ -261,6 +264,11 @@ export class Renderer {
   /** Toggle the directional key light (lights interaction). */
   toggleKeyLight(on) {
     this.lights.toggleKey(on);
+  }
+
+  /** Toggle the warm accent point light (secondary lights interaction). */
+  toggleAccentLight(on) {
+    this.lights.toggleAccent(on);
   }
 
   /** Start the render loop. Single place TWEEN.update() is called. */

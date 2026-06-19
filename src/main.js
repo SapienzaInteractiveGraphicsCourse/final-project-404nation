@@ -215,6 +215,8 @@ window.addEventListener("keydown", (e) => {
     selectView("orbit");
   } else if (key === "l") {
     toggleLight();
+  } else if (key === "k") {
+    toggleAccent();
   }
 });
 //UI buttons
@@ -233,6 +235,11 @@ function toggleLight() {
   renderer.toggleKeyLight(lightOn);
   els.lightBtn.textContent = `Key light: ${lightOn ? "ON" : "OFF"}`;
   els.lightBtn.classList.toggle("active", !lightOn);
+}
+let accentOn = true;
+function toggleAccent() {
+  accentOn = !accentOn;
+  renderer.toggleAccentLight(accentOn);
 }
 els.lightBtn.addEventListener("click", toggleLight);
 els.prevBtn.addEventListener("click", loadPreviousLevel);
