@@ -11,7 +11,7 @@
 
     <!-- HUD -->
     <div id="hud">
-      <div class="hud-row"><span class="hud-label">Level</span><span id="hud-level">—</span></div>
+      <div class="hud-row"><span class="hud-label">Level</span><span id="hud-level">-</span></div>
       <div class="hud-row"><span class="hud-label">Fruit left</span><span id="hud-fruit">0</span></div>
       <div class="hud-row"><span class="hud-label">Moves</span><span id="hud-moves">0</span></div>
     </div>
@@ -30,12 +30,14 @@
       </div>
       <div class="ctrl-group">
         <span class="ctrl-title">Game</span>
+        <button id="btn-prev">Prev (P)</button>
+        <button id="btn-next">Next (N)</button>
         <button id="btn-undo">Undo (U)</button>
         <button id="btn-reset">Reset (R)</button>
       </div>
     </div>
 
-    <div id="hint">Move: WASD / Arrows &nbsp;·&nbsp; Drag to orbit &nbsp;·&nbsp; Scroll to zoom</div>
+    <div id="hint">Move: WASD / Arrows &nbsp;|&nbsp; Levels: P / N &nbsp;|&nbsp; Drag to orbit &nbsp;|&nbsp; Scroll to zoom</div>
 
     <!-- Win / lose overlay -->
     <div id="overlay" class="hidden">

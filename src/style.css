@@ -109,6 +109,11 @@ button.active {
   border-color: transparent;
 }
 
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 #hint {
   position: fixed;
   bottom: 16px;
