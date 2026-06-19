@@ -22,7 +22,6 @@ export class InputManager{
                         this.onRestart();
                     }return;
             }
-
             if (direction && this.onMove){
                 this.onMove(direction);
             }
