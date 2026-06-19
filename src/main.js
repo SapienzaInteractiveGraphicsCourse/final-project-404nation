@@ -26,6 +26,7 @@ let snakeView = new SnakeView(engine.state, { materials: renderer.snakeMaterials
 let busy = false;
 let currentView = "iso";
 let gameStarted = false;
+let menuOpen = true;
 let hintTimer = null;
 renderer.boardGroup.add(snakeView.object3D);
 renderer.start();
@@ -45,6 +46,7 @@ const els = {
   nextBtn: document.querySelector("#btn-next"),
   mainMenuBtn: document.querySelector("#btn-main-menu"),
   mainMenu: document.querySelector("#main-menu"),
+  resumeBtn: document.querySelector("#btn-resume"),
   startBtn: document.querySelector("#btn-start"),
   levelSelectBtn: document.querySelector("#btn-level-select"),
   levelSelect: document.querySelector("#level-select")
@@ -104,32 +106,51 @@ function loadLevelAt(index) {
 }
 function startGame(index = 0) {
   gameStarted = true;
+  menuOpen = false;
   els.mainMenu.classList.add("hidden");
+  els.resumeBtn.classList.add("hidden");
+  els.levelSelect.classList.add("hidden");
   els.controls.classList.add("hidden");
   loadLevelAt(index);
 }
-function returnToMainMenu() {
-  gameStarted = false;
-  busy = false;
+function openMainMenu() {
+  if (!gameStarted || busy) return;
+  menuOpen = true;
   hideOverlay();
   hideHint();
   els.controls.classList.add("hidden");
   els.levelSelect.classList.add("hidden");
+  els.resumeBtn.classList.remove("hidden");
   els.mainMenu.classList.remove("hidden");
 }
+function resumeGame() {
+  if (!gameStarted) return;
+  menuOpen = false;
+  els.levelSelect.classList.add("hidden");
+  els.mainMenu.classList.add("hidden");
+}
+function toggleMainMenu() {
+  if (menuOpen) {
+    resumeGame();
+  } else {
+    openMainMenu();
+  }
+}
 function loadNextLevel() {
+  if (menuOpen) return;
   if (currentLevelIndex < LEVELS.length - 1) {
     loadLevelAt(currentLevelIndex + 1);
   }
 }
 function loadPreviousLevel() {
+  if (menuOpen) return;
   if (currentLevelIndex > 0) {
     loadLevelAt(currentLevelIndex - 1);
   }
 }
 //movement
 async function onMove(direction) {
-  if (!gameStarted || busy || engine.status !== "playing") return;
+  if (!gameStarted || menuOpen || busy || engine.status !== "playing") return;
   const result = engine.step(direction);
   if (!result.accepted) return;
   busy = true;
@@ -142,7 +163,7 @@ async function onMove(direction) {
   updateHud(engine.state);
 }
 function doUndo() {
-  if (!gameStarted || busy) return;
+  if (!gameStarted || menuOpen || busy) return;
   const state = engine.undo();
   if (state) {
     snakeView.setStateInstant(state);
@@ -151,14 +172,14 @@ function doUndo() {
   }
 }
 function doReset() {
-  if (!gameStarted || busy) return;
+  if (!gameStarted || menuOpen || busy) return;
   const state = engine.reset();
   snakeView.setStateInstant(state);
   renderer.updateFromState(state);
   updateHud(state);
 }
 function toggleControls() {
-  if (!gameStarted) return;
+  if (!gameStarted || menuOpen) return;
   els.controls.classList.toggle("hidden");
 }
 //input
@@ -181,7 +202,7 @@ window.addEventListener("keydown", (e) => {
   } else if (key === "r") {
     doReset();
   } else if (key === "m") {
-    returnToMainMenu();
+    toggleMainMenu();
   } else if (key === "n") {
     if (gameStarted) loadNextLevel();
   } else if (key === "p") {
@@ -216,7 +237,8 @@ function toggleLight() {
 els.lightBtn.addEventListener("click", toggleLight);
 els.prevBtn.addEventListener("click", loadPreviousLevel);
 els.nextBtn.addEventListener("click", loadNextLevel);
-els.mainMenuBtn.addEventListener("click", returnToMainMenu);
+els.mainMenuBtn.addEventListener("click", openMainMenu);
+els.resumeBtn.addEventListener("click", resumeGame);
 els.startBtn.addEventListener("click", () => startGame(0));
 els.levelSelectBtn.addEventListener("click", () => {
   els.levelSelect.classList.toggle("hidden");

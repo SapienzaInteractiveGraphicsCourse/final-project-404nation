@@ -118,6 +118,10 @@ button:disabled {
   opacity: 0.45;
 }
 
+button.hidden {
+  display: none;
+}
+
 #hint {
   position: fixed;
   bottom: 16px;
@@ -191,7 +195,7 @@ button:disabled {
 }
 
 .menu-actions {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
 }
 
 #btn-start {
