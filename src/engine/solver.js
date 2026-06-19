@@ -65,7 +65,7 @@ export function resolveStep(state, ctx, dir) {
   }
   const targetCh = ctx.grid[target.row][target.col];
   if (isWall(targetCh)) return reject();
-  if (state.segments.some((s) => equals(s, target))) return reject();
+  if (state.segments.slice(0, -1).some((s) => equals(s, target))) return reject(); //ignore tail
 
   // --- Legal move: build the glide/grow state. ---
   const ate = isFruit(targetCh) && state.remainingFruit.some((f) => equals(f, target));
