@@ -21,6 +21,7 @@ npm run dev
 | A | Move Left |
 | S | Move Down |
 | D | Move Right |
+| R | Restart Level |
 ## Levels
 Three custom levels are provided:
 - Level 1
