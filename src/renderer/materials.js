@@ -20,7 +20,7 @@ import { textureSet, applyTextureSet } from "./textures.js";
  */
 export const MATERIAL_DEFS = {
   // --- blocks (walls / obstacles): several looks so cells can differ ---
-  wall: { color: 0x8a6f52, roughness: 1.0, metalness: 0.05, textures: textureSet("wall"), normalScale: [1.2, 1.2] },
+  wall: { color: 0xffffff, roughness: 1.0, metalness: 0.05, textures: textureSet("wall"), normalScale: [1.2, 1.2] },
   wallAlt: { color: 0x6f5a44, roughness: 1.0, metalness: 0.05, textures: textureSet("wall_alt"), normalScale: [1.2, 1.2] },
   stone: { color: 0x7d8590, roughness: 0.95, metalness: 0.0, textures: textureSet("stone") },
   // NOTE: high metalness with no environment map renders black. Keep metalness

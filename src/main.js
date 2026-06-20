@@ -24,7 +24,7 @@ let level = LEVELS[currentLevelIndex];
 let engine = new GameEngine(level);
 let snakeView = new SnakeView(engine.state, { materials: renderer.snakeMaterials });
 let busy = false;
-let currentView = "iso";
+let currentView = "front";
 let gameStarted = false;
 let menuOpen = true;
 let hintTimer = null;
@@ -215,6 +215,8 @@ window.addEventListener("keydown", (e) => {
     selectView("orbit");
   } else if (key === "l") {
     toggleLight();
+  } else if (key === "k") {
+    toggleAccent();
   }
 });
 //UI buttons
@@ -233,6 +235,11 @@ function toggleLight() {
   renderer.toggleKeyLight(lightOn);
   els.lightBtn.textContent = `Key light: ${lightOn ? "ON" : "OFF"}`;
   els.lightBtn.classList.toggle("active", !lightOn);
+}
+let accentOn = true;
+function toggleAccent() {
+  accentOn = !accentOn;
+  renderer.toggleAccentLight(accentOn);
 }
 els.lightBtn.addEventListener("click", toggleLight);
 els.prevBtn.addEventListener("click", loadPreviousLevel);

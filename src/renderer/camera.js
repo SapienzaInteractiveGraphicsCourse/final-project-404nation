@@ -10,12 +10,18 @@
 
 import * as THREE from "../../lib/three.module.js";
 
-const MIN_POLAR = 0.15;             // keep above the floor
-const MAX_POLAR = Math.PI / 2 - 0.02; // and below the horizon (no flip-under)
+// Orbit clamps — keep the camera in a small front sector so the scene always
+// reads as "looking into a shadow box" (the diorama lighting is calibrated for a
+// near-front view; wide angles reveal the flat back and break the illusion).
+const MAX_AZIMUTH = Math.PI / 4;          // ±45° left/right
+const MIN_POLAR = 0.55;                   // don't look down past the board
+const MAX_POLAR = Math.PI / 2 - 0.02;     // and not below the horizon (no flip-under)
+const MIN_ZOOM = 0.7;
+const MAX_ZOOM = 2.0;
 
 /** Named preset framings: { azimuth, polar, radius } in spherical coords. */
 const VIEWS = {
-  front: { azimuth: 0, polar: Math.PI / 2 - 0.03, radius: 1.05 },
+  front: { azimuth: 0, polar: Math.PI / 2 - 0.03, radius: 1.0 },
   iso: { azimuth: -0.62, polar: 0.92, radius: 1.15 },
   orbit: { azimuth: -0.62, polar: 0.92, radius: 1.15 } // free-look starts here
 };
@@ -88,7 +94,7 @@ export class OrbitCamera {
       const dy = e.clientY - this._lastY;
       this._lastX = e.clientX;
       this._lastY = e.clientY;
-      this.azimuth -= dx * 0.008;
+      this.azimuth = clamp(this.azimuth - dx * 0.008, -MAX_AZIMUTH, MAX_AZIMUTH);
       this.polar = clamp(this.polar - dy * 0.008, MIN_POLAR, MAX_POLAR);
       this.update();
     };
@@ -99,7 +105,7 @@ export class OrbitCamera {
     const onWheel = (e) => {
       e.preventDefault();
       const factor = Math.exp(e.deltaY * 0.001);
-      this.radiusScale = clamp(this.radiusScale * factor, 0.55, 3.0);
+      this.radiusScale = clamp(this.radiusScale * factor, MIN_ZOOM, MAX_ZOOM);
       this.update();
     };
 
