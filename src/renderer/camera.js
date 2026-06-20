@@ -21,7 +21,7 @@ const MAX_ZOOM = 2.0;
 
 /** Named preset framings: { azimuth, polar, radius } in spherical coords. */
 const VIEWS = {
-  front: { azimuth: 0, polar: Math.PI / 2 - 0.03, radius: 1.05 },
+  front: { azimuth: 0, polar: Math.PI / 2 - 0.03, radius: 1.0 },
   iso: { azimuth: -0.62, polar: 0.92, radius: 1.15 },
   orbit: { azimuth: -0.62, polar: 0.92, radius: 1.15 } // free-look starts here
 };
